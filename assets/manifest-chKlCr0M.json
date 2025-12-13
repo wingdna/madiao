@@ -1,0 +1,26 @@
+
+{
+  "short_name": "MaDiao",
+  "name": "Ma Diao Master: Ancient Strategy",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/9.x/initials/svg?seed=MD&backgroundColor=1a0505&textColor=c5a059&fontWeight=900",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://api.dicebear.com/9.x/initials/svg?seed=MD&backgroundColor=1a0505&textColor=c5a059&fontWeight=900",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#050202",
+  "background_color": "#050202",
+  "orientation": "any",
+  "description": "A visually stunning, historically inspired implementation of the ancient Chinese game Ma Diao.",
+  "categories": ["games", "strategy", "education"]
+}

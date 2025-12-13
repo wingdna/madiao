@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Fix relative paths for GitHub Pages / Cloud Hosting -->
+    <base href="./" />
+    
+    <!-- PWA Settings -->
+    <meta name="theme-color" content="#050202" />
+    <meta name="description" content="A visually stunning, historically inspired implementation of the ancient Chinese game Ma Diao." />
+    <link rel="manifest" href="./assets/manifest-chKlCr0M.json" />
+    
+    <!-- iOS PWA Compatibility -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MaDiao" />
+    <link rel="apple-touch-icon" href="https://api.dicebear.com/9.x/initials/svg?seed=MD&backgroundColor=1a0505&textColor=c5a059&fontWeight=900" />
+
+    <title>Ma Diao Master</title>
+
+
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+      html, body, #root { 
+        height: 100%; 
+        width: 100%; 
+        margin: 0; 
+        padding: 0; 
+        overflow: hidden; 
+        background-color: #050202; 
+        color: #E8E4D9;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+      }
+      
+      #app-loader {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #050202; z-index: 9000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        transition: opacity 0.5s ease-out;
+      }
+      
+      #loader-spinner {
+        width: 50px; height: 50px; 
+        border: 3px solid #3e2b22; 
+        border-top: 3px solid #C5A059; 
+        border-radius: 50%; 
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+
+      #loader-text {
+        font-family: 'Courier New', serif; 
+        color: #C5A059; 
+        font-size: 12px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+
+      /* Log hidden by default, styling retained just in case of emergency manual activation */
+      #boot-log {
+        display: none; 
+      }
+
+      .preserve-3d { transform-style: preserve-3d; }
+      .perspective-container { perspective: 1200px; overflow: hidden; }
+      .font-calligraphy { font-family: 'Ma Shan Zheng', cursive; }
+      .font-serif { font-family: 'Noto Serif SC', serif; }
+      .tategaki { writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 0.1em; }
+
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      @keyframes sway-slow { 0%, 100% { transform: translateX(0) translateY(0); } 50% { transform: translateX(20px) translateY(10px); } }
+      .animate-sway-slow { animation: sway-slow 15s ease-in-out infinite; }
+      @keyframes pulse-slow-opacity { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+      .animate-pulse-slow-opacity { animation: pulse-slow-opacity 3s ease-in-out infinite; }
+      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+      .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+      @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+      
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #0f0a08; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #3e2b22; border-radius: 3px; }
+
+      @keyframes card-smash-inner {
+        0% { transform: scale(0.5) translateZ(100px); opacity: 0; }
+        60% { transform: scale(1.8) translateZ(200px) rotateZ(-5deg); opacity: 1; }
+        70% { transform: scale(1.8) translateZ(200px) rotateZ(5deg); }
+        80% { transform: scale(1.5) translateZ(100px) rotateZ(0deg); }
+        100% { transform: scale(1.0) translateZ(0px) rotateZ(0deg); } 
+      }
+      .animate-card-smash { animation: card-smash-inner 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+      @keyframes slash-effect {
+        0% { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); opacity: 0; }
+        20% { opacity: 1; }
+        50% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+        100% { opacity: 0; }
+      }
+      .animate-slash { animation: slash-effect 0.4s ease-out forwards; }
+
+      @keyframes card-wither-inner {
+        0% { transform: scale(1.1) translateZ(50px); filter: brightness(1.2); opacity: 0; }
+        50% { transform: scale(0.9) translateZ(10px) rotateZ(5deg); filter: brightness(0.6) sepia(0.8) grayscale(0.8); opacity: 1; }
+        80% { transform: scale(0.95) translateZ(5px) rotateZ(-2deg); filter: brightness(0.8) sepia(0.4); opacity: 1; }
+        100% { transform: scale(1.0) translateZ(0px) rotateZ(0deg); filter: none; opacity: 1; } 
+      }
+      .animate-card-wither { animation: card-wither-inner 0.8s ease-out forwards; }
+
+      @keyframes shadow-sway {
+        0% { transform: translateX(0px) rotate(0deg) scale(1); }
+        33% { transform: translateX(15px) rotate(1deg) scale(1.02); }
+        66% { transform: translateX(-10px) rotate(-0.5deg) scale(0.98); }
+        100% { transform: translateX(0px) rotate(0deg) scale(1); }
+      }
+      .animate-shadow-sway { animation: shadow-sway 12s ease-in-out infinite; }
+
+      @keyframes actor-move {
+        0% { transform: translateX(-20px) scaleY(1); opacity: 0.3; }
+        50% { transform: translateX(20px) scaleY(1.05); opacity: 0.5; }
+        100% { transform: translateX(-20px) scaleY(1); opacity: 0.3; }
+      }
+      .animate-actor-move { animation: actor-move 8s ease-in-out infinite; }
+
+    </style>
+
+    <!-- LOGGER INIT & FAILSAFE -->
+    <script>
+      // 1. Process Polyfill (Critical for many libs)
+      window.process = window.process || { env: { NODE_ENV: 'production' } };
+
+      // 2. Logging Utilities (SILENCED FOR PRODUCTION)
+      window.showLog = function() {
+        // No-op to keep UI clean
+        console.log("Log display disabled by user preference.");
+      };
+
+      window.logToScreen = function(msg, type = 'info') {
+        // Route everything to console only
+        console[type === 'error' ? 'error' : (type === 'warn' ? 'warn' : 'log')](msg);
+      };
+      
+      // 3. Global Error Listener
+      window.addEventListener('error', function(event) {
+        // Log quietly to console
+        console.error("Global Error:", event.message, event.filename, event.lineno);
+      }, true);
+
+      window.onunhandledrejection = function(event) {
+        console.error("Unhandled Rejection:", event.reason);
+      };
+
+      // 4. Watchdog: 30s timeout
+      window.bootTimeout = setTimeout(() => {
+          const text = document.getElementById('loader-text');
+          const spin = document.getElementById('loader-spinner');
+          if (text) {
+              text.innerText = "Connection slow. Retrying...";
+              text.style.color = "#ff6b6b";
+          }
+          console.warn("Boot watchdog timed out. App might be stuck.");
+          
+          // Auto-reload after 5 more seconds if stuck
+          setTimeout(() => window.location.reload(), 5000);
+          
+      }, 30000);
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- VITE ENTRY POINT -->
+  <link rel="stylesheet" href="/index.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+        "vite": "https://esm.sh/vite@^7.2.7",
+        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+      }
+    }
+    </script>
+  <script type="module" crossorigin src="./assets/index-DUAuOBoA.js"></script>
+</head>
+  <body>
+    <div id="app-loader">
+        <div id="loader-spinner"></div>
+        <div id="loader-text">INITIALIZING ENGINE...</div>
+    </div>
+
+    <!-- Hidden Boot Log -->
+    <div id="boot-log"></div>
+    <div id="root"></div>
+</body>
+</html>
