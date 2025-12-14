@@ -205,7 +205,8 @@
         const action = document.getElementById('loader-action');
         if (loader) {
             // Show specific error to help debug 'Undefined' issues
-            loader.innerText = "Error: " + event.message;
+            const msg = event.message || "Unknown Script Error";
+            loader.innerText = "Error: " + msg;
             loader.style.color = "#ff6b6b";
             if(spinner) spinner.style.borderTopColor = "#ff6b6b";
             if(action) {
@@ -216,12 +217,11 @@
       }, true);
 
       window.onunhandledrejection = function(event) {
-        // Often caused by PWA registration fail on HTTP
         console.warn("Unhandled Rejection:", event.reason);
-        // Only show fatal errors, ignore minor promise rejections
-        if (event.reason && String(event.reason).includes("ChunkLoadError")) {
+        // Catch PWA 404s or network failures here if possible
+        if (event.reason && (String(event.reason).includes("ChunkLoadError") || String(event.reason).includes("404"))) {
              const loader = document.getElementById('loader-text');
-             if(loader) loader.innerText = "Network Error (Chunk Load)";
+             if(loader) loader.innerText = "Network Error (Asset Missing)";
         }
       };
 
