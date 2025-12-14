@@ -10,7 +10,7 @@
     <!-- PWA Settings -->
     <meta name="theme-color" content="#1a0505" />
     <meta name="description" content="A visually stunning, historically inspired implementation of the ancient Chinese game Ma Diao." />
-    <link rel="manifest" href="./assets/manifest-chKlCr0M.json" />
+    <link rel="manifest" href="./assets/manifest-DVdH1IGR.json" />
     
     <!-- iOS PWA Compatibility -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -62,6 +62,18 @@
         text-transform: uppercase;
         max-width: 80%;
         text-align: center;
+      }
+
+      #loader-action {
+        margin-top: 20px;
+        display: none;
+        padding: 10px 20px;
+        border: 1px solid #C5A059;
+        color: #C5A059;
+        background: transparent;
+        font-size: 10px;
+        text-transform: uppercase;
+        cursor: pointer;
       }
 
       /* Log hidden by default, styling retained just in case of emergency manual activation */
@@ -190,27 +202,46 @@
         console.error("Global Error:", event.message);
         const loader = document.getElementById('loader-text');
         const spinner = document.getElementById('loader-spinner');
+        const action = document.getElementById('loader-action');
         if (loader) {
+            // Show specific error to help debug 'Undefined' issues
             loader.innerText = "Error: " + event.message;
             loader.style.color = "#ff6b6b";
             if(spinner) spinner.style.borderTopColor = "#ff6b6b";
+            if(action) {
+                action.style.display = "block";
+                action.innerText = "TRY TO START ANYWAY";
+            }
         }
       }, true);
 
       window.onunhandledrejection = function(event) {
-        console.error("Unhandled Rejection:", event.reason);
+        // Often caused by PWA registration fail on HTTP
+        console.warn("Unhandled Rejection:", event.reason);
+        // Only show fatal errors, ignore minor promise rejections
+        if (event.reason && String(event.reason).includes("ChunkLoadError")) {
+             const loader = document.getElementById('loader-text');
+             if(loader) loader.innerText = "Network Error (Chunk Load)";
+        }
       };
 
-      // 4. Watchdog: 30s timeout
+      // 4. Watchdog: 45s timeout (Increased for IP/Mobile latency)
       window.bootTimeout = setTimeout(() => {
           const text = document.getElementById('loader-text');
+          const action = document.getElementById('loader-action');
           if (text) {
-              text.innerText = "Connection slow. Retrying...";
-              text.style.color = "#ff6b6b";
+              text.innerText = "BOOT SLOW. IP/NETWORK ISSUE?";
+              text.style.color = "#fbbf24";
           }
-          console.warn("Boot watchdog timed out. App might be stuck.");
-          setTimeout(() => window.location.reload(), 5000);
-      }, 30000);
+          if (action) {
+              action.style.display = "block";
+              action.onclick = function() {
+                  // Force remove loader
+                  const l = document.getElementById('app-loader');
+                  if(l) l.style.display = 'none';
+              }
+          }
+      }, 45000);
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -231,12 +262,13 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="./assets/index-CS01jKbI.js"></script>
+  <script type="module" crossorigin src="./assets/index-BMtEe6k5.js"></script>
 </head>
   <body>
     <div id="app-loader">
         <div id="loader-spinner"></div>
         <div id="loader-text">INITIALIZING ENGINE...</div>
+        <button id="loader-action" onclick="window.location.reload()">RELOAD</button>
     </div>
 
     <!-- Hidden Boot Log -->
