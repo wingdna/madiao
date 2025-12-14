@@ -8,7 +8,7 @@
     <base href="./" />
     
     <!-- PWA Settings -->
-    <meta name="theme-color" content="#050202" />
+    <meta name="theme-color" content="#1a0505" />
     <meta name="description" content="A visually stunning, historically inspired implementation of the ancient Chinese game Ma Diao." />
     <link rel="manifest" href="./assets/manifest-chKlCr0M.json" />
     
@@ -20,12 +20,10 @@
 
     <title>Ma Diao Master</title>
 
-
-
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
       html, body, #root { 
@@ -34,7 +32,7 @@
         margin: 0; 
         padding: 0; 
         overflow: hidden; 
-        background-color: #050202; 
+        background-color: #1a0505; /* Updated base color to warm dark red */
         color: #E8E4D9;
         -webkit-tap-highlight-color: transparent;
         overscroll-behavior: none;
@@ -42,7 +40,7 @@
       
       #app-loader {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #050202; z-index: 9000;
+        background: #1a0505; z-index: 9000;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         transition: opacity 0.5s ease-out;
       }
@@ -62,6 +60,8 @@
         font-size: 12px;
         letter-spacing: 2px;
         text-transform: uppercase;
+        max-width: 80%;
+        text-align: center;
       }
 
       /* Log hidden by default, styling retained just in case of emergency manual activation */
@@ -85,6 +85,27 @@
       @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
       
+      /* --- NEW: Fog Reveal Animation (Slow writing on glass) --- */
+      @keyframes fog-reveal {
+        0% { 
+          opacity: 0; 
+          filter: blur(15px); 
+          transform: scale(1.05);
+        }
+        40% {
+          opacity: 0.4;
+          filter: blur(8px);
+        }
+        100% { 
+          opacity: 1; 
+          filter: blur(0px); 
+          transform: scale(1.0);
+        }
+      }
+      .animate-fog-reveal {
+        animation: fog-reveal 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+
       .custom-scrollbar::-webkit-scrollbar { width: 6px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: #0f0a08; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: #3e2b22; border-radius: 3px; }
@@ -129,6 +150,25 @@
       }
       .animate-actor-move { animation: actor-move 8s ease-in-out infinite; }
 
+      /* --- NEW CANDLE FLICKER ATMOSPHERE --- */
+      @keyframes candle-flicker {
+        0% { opacity: 0.6; transform: scale(1) translate(0,0); filter: blur(90px); }
+        25% { opacity: 0.75; transform: scale(1.05) translate(2px, -2px); filter: blur(95px); }
+        50% { opacity: 0.55; transform: scale(0.95) translate(-1px, 1px); filter: blur(85px); }
+        60% { opacity: 0.7; transform: scale(1.02) translate(1px, 2px); filter: blur(92px); }
+        75% { opacity: 0.65; transform: scale(1.01) translate(-2px, -1px); filter: blur(88px); }
+        100% { opacity: 0.6; transform: scale(1) translate(0,0); filter: blur(90px); }
+      }
+      .animate-candle-flicker { animation: candle-flicker 5s ease-in-out infinite; }
+
+      @keyframes dust-float {
+        0% { transform: translateY(0px) translateX(0px); opacity: 0; }
+        20% { opacity: 0.6; }
+        80% { opacity: 0.6; }
+        100% { transform: translateY(-50px) translateX(20px); opacity: 0; }
+      }
+      .animate-dust-float { animation: dust-float 8s linear infinite; }
+
     </style>
 
     <!-- LOGGER INIT & FAILSAFE -->
@@ -138,19 +178,23 @@
 
       // 2. Logging Utilities (SILENCED FOR PRODUCTION)
       window.showLog = function() {
-        // No-op to keep UI clean
         console.log("Log display disabled by user preference.");
       };
 
       window.logToScreen = function(msg, type = 'info') {
-        // Route everything to console only
         console[type === 'error' ? 'error' : (type === 'warn' ? 'warn' : 'log')](msg);
       };
       
       // 3. Global Error Listener
       window.addEventListener('error', function(event) {
-        // Log quietly to console
-        console.error("Global Error:", event.message, event.filename, event.lineno);
+        console.error("Global Error:", event.message);
+        const loader = document.getElementById('loader-text');
+        const spinner = document.getElementById('loader-spinner');
+        if (loader) {
+            loader.innerText = "Error: " + event.message;
+            loader.style.color = "#ff6b6b";
+            if(spinner) spinner.style.borderTopColor = "#ff6b6b";
+        }
       }, true);
 
       window.onunhandledrejection = function(event) {
@@ -160,16 +204,12 @@
       // 4. Watchdog: 30s timeout
       window.bootTimeout = setTimeout(() => {
           const text = document.getElementById('loader-text');
-          const spin = document.getElementById('loader-spinner');
           if (text) {
               text.innerText = "Connection slow. Retrying...";
               text.style.color = "#ff6b6b";
           }
           console.warn("Boot watchdog timed out. App might be stuck.");
-          
-          // Auto-reload after 5 more seconds if stuck
           setTimeout(() => window.location.reload(), 5000);
-          
       }, 30000);
     </script>
 
@@ -177,20 +217,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <!-- VITE ENTRY POINT -->
-  <link rel="stylesheet" href="/index.css">
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@^19.2.3",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-        "react/": "https://esm.sh/react@^19.2.3/",
-        "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-        "vite": "https://esm.sh/vite@^7.2.7",
-        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-      }
-    }
-    </script>
-  <script type="module" crossorigin src="./assets/index-DUAuOBoA.js"></script>
+
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+    "vite": "https://esm.sh/vite@^7.2.7",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+  <script type="module" crossorigin src="./assets/index-CS01jKbI.js"></script>
 </head>
   <body>
     <div id="app-loader">
